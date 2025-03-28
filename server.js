@@ -6,32 +6,40 @@ require("dotenv").config();
 const app = express();
 app.use(cors());
 
-// Log the loaded environment variables
+const {
+  IMAGEKIT_PUBLIC_KEY,
+  IMAGEKIT_PRIVATE_KEY,
+  IMAGEKIT_URL_ENDPOINT,
+} = process.env;
+
 console.log("✅ Starting server...");
-console.log("🔑 IMAGEKIT_PUBLIC_KEY:", process.env.IMAGEKIT_PUBLIC_KEY);
-console.log("🔒 IMAGEKIT_PRIVATE_KEY:", process.env.IMAGEKIT_PRIVATE_KEY ? "Loaded ✅" : "Missing ❌");
-console.log("🌐 IMAGEKIT_URL_ENDPOINT:", process.env.IMAGEKIT_URL_ENDPOINT);
-
-// Prepare the config object
-const config = {
-  publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
-  privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
-  urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
-};
-
-console.log("🧪 Raw config passed to ImageKit:", config); // Debug the final object
-
-// Initialize ImageKit
-const imagekit = new ImageKit(config);
-
-// Auth route
-app.get("/auth", (req, res) => {
-  const result = imagekit.getAuthenticationParameters();
-  res.send(result);
+console.log("🔑 IMAGEKIT_PUBLIC_KEY:", typeof IMAGEKIT_PUBLIC_KEY, IMAGEKIT_PUBLIC_KEY);
+console.log("🔒 IMAGEKIT_PRIVATE_KEY:", typeof IMAGEKIT_PRIVATE_KEY, IMAGEKIT_PRIVATE_KEY ? "Loaded ✅" : "Missing ❌");
+console.log("🌐 IMAGEKIT_URL_ENDPOINT:", typeof IMAGEKIT_URL_ENDPOINT, IMAGEKIT_URL_ENDPOINT);
+console.log("🧪 Raw config passed to ImageKit:", {
+  publicKey: IMAGEKIT_PUBLIC_KEY?.trim(),
+  privateKey: IMAGEKIT_PRIVATE_KEY?.trim(),
+  urlEndpoint: IMAGEKIT_URL_ENDPOINT?.trim(),
 });
 
-// Server
+const imagekit = new ImageKit({
+  publicKey: IMAGEKIT_PUBLIC_KEY?.trim(),
+  privateKey: IMAGEKIT_PRIVATE_KEY?.trim(),
+  urlEndpoint: IMAGEKIT_URL_ENDPOINT?.trim(),
+});
+
+app.get("/auth", (req, res) => {
+  try {
+    const result = imagekit.getAuthenticationParameters();
+    console.log("✅ Generated ImageKit auth params:", result);
+    res.send(result);
+  } catch (error) {
+    console.error("❌ Failed to generate auth params:", error.message);
+    res.status(500).json({ error: "Server error generating auth params" });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
